@@ -12,82 +12,82 @@ env.workspace = os.path.join(ws_dir,"GPS_pisteet.gdb")
 env.overwriteOutput = True
 
 fcList = arcpy.ListFeatureClasses() # listataan tiedostot
-trackList = [] # tehd‰‰n samoille datoille workspacesta riippumaton lista
+trackList = [] # tehd√§√§n samoille datoille workspacesta riippumaton lista
 
 
 for track in fcList: 
     outfp_dir = os.path.join(ws_dir,"GPS_pisteet.gdb")
-    trackList.append(os.path.join(outfp_dir,track))             # Lis‰t‰‰n pistetiedostojen polut uuteen listaan
+    trackList.append(os.path.join(outfp_dir,track))             # Lis√§t√§√§n pistetiedostojen polut uuteen listaan
 
 #------------------------------------------------------------------------------------------------------------------------------------    
 # Nimet listoille 
-ab_lista = []       # tyhj‰ lista A->B reiteille
-lenkkilista = []    # tyhj‰ lista lenkkim‰isille reiteille
+ab_lista = []       # tyhj√§ lista A->B reiteille
+lenkkilista = []    # tyhj√§ lista lenkkim√§isille reiteille
 
 
-# K‰yd‰‰n l‰pi kaikki tiedostolistalla olevat gps-pistetiedostot
+# K√§yd√§√§n l√§pi kaikki tiedostolistalla olevat gps-pistetiedostot
 
 for gps_track in trackList[]:
     print("-----Reitti " + os.path.basename(gps_track)+ "-----")
 
-    ### Trackeista erotetaan ensimm‰inen ja viimeinen piste ###
+    ### Trackeista erotetaan ensimm√§inen ja viimeinen piste ###
     # http://gis.stackexchange.com/questions/143807/how-to-get-values-of-last-row-in-table-with-arcpy-searchcursor
 
-    a_table = gps_track             # l‰pik‰yt‰v‰ tiedosto
-    order_fld = "Id"                # kentt‰ jonka mukaan j‰rjestet‰‰n tiedot laskevasti
-    return_flds = ["Id","from_start","SHAPE@"]   # palautettavat kent‰t
+    a_table = gps_track             # l√§pik√§yt√§v√§ tiedosto
+    order_fld = "Id"                # kentt√§ jonka mukaan j√§rjestet√§√§n tiedot laskevasti
+    return_flds = ["Id","from_start","SHAPE@"]   # palautettavat kent√§t
 
-    sql_clause = (None,'ORDER BY {} DESC'.format(order_fld)) # j‰rjestet‰‰n Id:n perusteella laskevasti, niin viimeinen piste on ensimm‰inen
+    sql_clause = (None,'ORDER BY {} DESC'.format(order_fld)) # j√§rjestet√§√§n Id:n perusteella laskevasti, niin viimeinen piste on ensimm√§inen
 
     first_row = ''
     last_row = ''
-    with arcpy.da.SearchCursor(a_table, return_flds) as cursor: # normaali j‰rjestys
+    with arcpy.da.SearchCursor(a_table, return_flds) as cursor: # normaali j√§rjestys
       first_row = cursor.next()
 
-    with arcpy.da.SearchCursor(a_table, return_flds, sql_clause=sql_clause) as cursor: # laskeva j‰rjestys
+    with arcpy.da.SearchCursor(a_table, return_flds, sql_clause=sql_clause) as cursor: # laskeva j√§rjestys
       last_row = cursor.next()  # last_row
 
-    first_ID = first_row[0]     # tallennetaan ensimm‰isen pisteen ID
+    first_ID = first_row[0]     # tallennetaan ensimm√§isen pisteen ID
     last_ID = last_row[0]       # tallennetaan viimeisen pisteen ID
-    first_dist = first_row[1]   # ensimm‰isen pisteen et‰isyystieto
-    #print("1. pisteen et‰isyystieto: "+ str(first_dist))
-    last_dist = last_row[1]     # viimeisen pisteen et‰isyystieto
-    #print("Viimeisen pisteen et‰isyystieto: "+ str(last_dist))
-    first_point = first_row[2]  # ensimm‰isen pisteen PointGeometry
+    first_dist = first_row[1]   # ensimm√§isen pisteen et√§isyystieto
+    #print("1. pisteen et√§isyystieto: "+ str(first_dist))
+    last_dist = last_row[1]     # viimeisen pisteen et√§isyystieto
+    #print("Viimeisen pisteen et√§isyystieto: "+ str(last_dist))
+    first_point = first_row[2]  # ensimm√§isen pisteen PointGeometry
     last_point = last_row[2]    # viimeisen pisteen PointGeometry
 
     pt_f = first_point
     pt_l = last_point
 
 
-    # Lasketaan alku- ja loppupisteiden v‰linen et‰isyys
+    # Lasketaan alku- ja loppupisteiden v√§linen et√§isyys
     tablename = os.path.basename(gps_track)+"_alku_loppu"
     output_table = os.path.join(ws_dir,"GPS_pisteet_kopio.gdb",tablename)
     arcpy.PointDistance_analysis(in_features=pt_f, near_features=pt_l, out_table=output_table)    
 
-    distance_row = ''                                                   # tyhj‰ muuttuja pisteiden et‰isyydelle
+    distance_row = ''                                                   # tyhj√§ muuttuja pisteiden et√§isyydelle
     with arcpy.da.SearchCursor(output_table, "DISTANCE") as cursor:     # luetaan cursorin avulla taulukosta
         distance_row = cursor.next()
 
-    point_distance = distance_row[0]                            # tallennetaan et‰isyyslukema
-    print("Pisteiden v‰linen et‰isyys: " + str(point_distance))
+    point_distance = distance_row[0]                            # tallennetaan et√§isyyslukema
+    print("Pisteiden v√§linen et√§isyys: " + str(point_distance))
 
-    # Reitin kokonaispituus GPS-pisteist‰ laskettuna on lopun matkalukema - alun matkalukema
+    # Reitin kokonaispituus GPS-pisteist√§ laskettuna on lopun matkalukema - alun matkalukema
     reittipituus = float(last_dist) - float(first_dist)
     print("Reitin kokonaispituus: " + str(reittipituus))
     
-    # Lasketaan alku- ja loppupisteen et‰isyyden suhde kokonaismatkaan 
+    # Lasketaan alku- ja loppupisteen et√§isyyden suhde kokonaismatkaan 
     reittisuhde = point_distance/reittipituus
-    print("Pisteiden v‰linen et‰isyys suhteessa kokonaismatkaan: " + str(reittisuhde))
+    print("Pisteiden v√§linen et√§isyys suhteessa kokonaismatkaan: " + str(reittisuhde))
     
-    # Jos pisteiden v‰linen et‰isyys > 1/10 koko reitin pituudesta, se on A->B matka
+    # Jos pisteiden v√§linen et√§isyys > 1/10 koko reitin pituudesta, se on A->B matka
     if reittisuhde > 0.1:
         ab_lista.append(gps_track)
         # Kopioidaan omaan feature datasettiin
 ##        newname = "AB_" + os.path.basename(gps_track) 
 ##        outdir = os.path.join(ws_dir,"GPS_pisteet.gdb","A_B_reitit")
 ##        arcpy.CopyFeatures_management(gps_track, os.path.join(outdir,newname))
-    # Jos et‰isyys on pienempi, kyseess‰ on lenkki    
+    # Jos et√§isyys on pienempi, kyseess√§ on lenkki    
     else:
         lenkkilista.append(gps_track)
         # Kopioidaan omaan feature datasettiin
@@ -102,8 +102,8 @@ for gps_track in trackList[]:
 
     
 # Printataan listojen pituudet
-print("Reittej‰ AB-listassa: " + str(len(ab_lista)))
-print("Reittej‰ lenkkilistassa: " + str(len(lenkkilista)))
+print("Reittej√§ AB-listassa: " + str(len(ab_lista)))
+print("Reittej√§ lenkkilistassa: " + str(len(lenkkilista)))
 
 
 ### Listataan koko aineisto omiin datasetteihin exportatut tiedostot tyypin mukaan
@@ -111,7 +111,7 @@ print("Reittej‰ lenkkilistassa: " + str(len(lenkkilista)))
 ##lenkkilista = arcpy.ListFeatureClasses("","","Lenkkireitit")
 
 
-# Tehd‰‰n lista kunkin henkilˆn AB-reiteille
+# Tehd√§√§n lista kunkin henkil√∂n AB-reiteille
 ab_lista2 = []
 ab_lista3 = []
 ab_lista4 = []
@@ -157,7 +157,7 @@ ab_lista48 = []
 ab_lista49 = []
 ab_lista50 = []
 
-# Lis‰t‰‰n hlˆkohtaiseen listaan jos AB-reittej‰ on
+# Lis√§t√§√§n hl√∂kohtaiseen listaan jos AB-reittej√§ on
 for track in ab_lista:
     if "C02_" in track:
         ab_lista2.append(track)
@@ -248,7 +248,7 @@ for track in ab_lista:
     elif "C50_" in track:
         ab_lista50.append(track)
 
-# Tehd‰‰n henkilˆkohtainen lenkkilista
+# Tehd√§√§n henkil√∂kohtainen lenkkilista
 l_lista2 = []
 l_lista3 = []
 l_lista4 = []
@@ -294,7 +294,7 @@ l_lista48 = []
 l_lista49 = []
 l_lista50 = []
 
-# Lis‰t‰‰n hlˆkohtaiseen listaan jos lenkkireittej‰ on
+# Lis√§t√§√§n hl√∂kohtaiseen listaan jos lenkkireittej√§ on
 for track in lenkkilista:
     if "C02_" in track:
         l_lista2.append(track)
@@ -388,104 +388,104 @@ for track in lenkkilista:
 
 
 # Printataan kaikki tulokset
-print("02 A->B reittej‰ "+str(len(ab_lista2))+" kpl")
-print("02 lenkkireittej‰ "+str(len(l_lista2))+" kpl")
-print("3 A->B reittej‰ "+str(len(ab_lista3))+" kpl")
-print("3 lenkkireittej‰ "+str(len(l_lista3))+" kpl")
-print("04 A->B reittej‰ "+str(len(ab_lista4))+" kpl")
-print("04 lenkkireittej‰ "+str(len(l_lista4))+" kpl")
-print("05 A->B reittej‰ "+str(len(ab_lista5))+" kpl")
-print("05 lenkkireittej‰ "+str(len(l_lista5))+" kpl")
-print("06 A->B reittej‰ "+str(len(ab_lista6))+" kpl")
-print("06 lenkkireittej‰ "+str(len(l_lista6))+" kpl")
-print("07 A->B reittej‰ "+str(len(ab_lista7))+" kpl")
-print("07 lenkkireittej‰ "+str(len(l_lista7))+" kpl")
-print("08 A->B reittej‰ "+str(len(ab_lista8))+" kpl")
-print("08 lenkkireittej‰ "+str(len(l_lista8))+" kpl")
-print("09 A->B reittej‰ "+str(len(ab_lista9))+" kpl")
-print("09 lenkkireittej‰ "+str(len(l_lista9))+" kpl")
-print("10 A->B reittej‰ "+str(len(ab_lista10))+" kpl")
-print("10 lenkkireittej‰ "+str(len(l_lista10))+" kpl")
-print("11 A->B reittej‰ "+str(len(ab_lista11))+" kpl")
-print("11 lenkkireittej‰ "+str(len(l_lista11))+" kpl")
-print("12 A->B reittej‰ "+str(len(ab_lista12))+" kpl")
-print("12 lenkkireittej‰ "+str(len(l_lista12))+" kpl")
-print("13 A->B reittej‰ "+str(len(ab_lista13))+" kpl")
-print("13 lenkkireittej‰ "+str(len(l_lista13))+" kpl")
-print("14 A->B reittej‰ "+str(len(ab_lista14))+" kpl")
-print("14 lenkkireittej‰ "+str(len(l_lista14))+" kpl")
-print("15 A->B reittej‰ "+str(len(ab_lista15))+" kpl")
-print("15 lenkkireittej‰ "+str(len(l_lista15))+" kpl")
-print("16 A->B reittej‰ "+str(len(ab_lista16))+" kpl")
-print("16 lenkkireittej‰ "+str(len(l_lista16))+" kpl")
-print("17 A->B reittej‰ "+str(len(ab_lista17))+" kpl")
-print("17 lenkkireittej‰ "+str(len(l_lista17))+" kpl")
-print("18 A->B reittej‰ "+str(len(ab_lista18))+" kpl")
-print("18 lenkkireittej‰ "+str(len(l_lista18))+" kpl")
-print("19 A->B reittej‰ "+str(len(ab_lista19))+" kpl")
-print("19 lenkkireittej‰ "+str(len(l_lista19))+" kpl")
-print("20 A->B reittej‰ "+str(len(ab_lista20))+" kpl")
-print("20 lenkkireittej‰ "+str(len(l_lista20))+" kpl")
-print("21 A->B reittej‰ "+str(len(ab_lista21))+" kpl")
-print("21 lenkkireittej‰ "+str(len(l_lista21))+" kpl")
-print("22 A->B reittej‰ "+str(len(ab_lista22))+" kpl")
-print("22 lenkkireittej‰ "+str(len(l_lista22))+" kpl")
-print("23 A->B reittej‰ "+str(len(ab_lista23))+" kpl")
-print("23 lenkkireittej‰ "+str(len(l_lista23))+" kpl")
-print("24 A->B reittej‰ "+str(len(ab_lista24))+" kpl")
-print("24 lenkkireittej‰ "+str(len(l_lista24))+" kpl")
-print("25 A->B reittej‰ "+str(len(ab_lista25))+" kpl")
-print("25 lenkkireittej‰ "+str(len(l_lista25))+" kpl")
-print("26 A->B reittej‰ "+str(len(ab_lista26))+" kpl")
-print("26 lenkkireittej‰ "+str(len(l_lista26))+" kpl")
-print("27 A->B reittej‰ "+str(len(ab_lista27))+" kpl")
-print("27 lenkkireittej‰ "+str(len(l_lista27))+" kpl")
-print("28 A->B reittej‰ "+str(len(ab_lista28))+" kpl")
-print("28 lenkkireittej‰ "+str(len(l_lista28))+" kpl")
-print("30 A->B reittej‰ "+str(len(ab_lista30))+" kpl")
-print("30 lenkkireittej‰ "+str(len(l_lista30))+" kpl")
-print("32 A->B reittej‰ "+str(len(ab_lista32))+" kpl")
-print("32 lenkkireittej‰ "+str(len(l_lista32))+" kpl")
-print("33 A->B reittej‰ "+str(len(ab_lista33))+" kpl")
-print("33 lenkkireittej‰ "+str(len(l_lista33))+" kpl")
-print("34 A->B reittej‰ "+str(len(ab_lista34))+" kpl")
-print("34 lenkkireittej‰ "+str(len(l_lista34))+" kpl")
-print("35 A->B reittej‰ "+str(len(ab_lista35))+" kpl")
-print("35 lenkkireittej‰ "+str(len(l_lista35))+" kpl")
-print("36 A->B reittej‰ "+str(len(ab_lista36))+" kpl")
-print("36 lenkkireittej‰ "+str(len(l_lista36))+" kpl")
-print("37 A->B reittej‰ "+str(len(ab_lista37))+" kpl")
-print("37 lenkkireittej‰ "+str(len(l_lista37))+" kpl")
-print("39 A->B reittej‰ "+str(len(ab_lista39))+" kpl")
-print("39 lenkkireittej‰ "+str(len(l_lista39))+" kpl")
-print("40 A->B reittej‰ "+str(len(ab_lista40))+" kpl")
-print("40 lenkkireittej‰ "+str(len(l_lista40))+" kpl")
-print("43 A->B reittej‰ "+str(len(ab_lista43))+" kpl")
-print("43 lenkkireittej‰ "+str(len(l_lista43))+" kpl")
-print("44 A->B reittej‰ "+str(len(ab_lista44))+" kpl")
-print("44 lenkkireittej‰ "+str(len(l_lista44))+" kpl")
-print("45 A->B reittej‰ "+str(len(ab_lista45))+" kpl")
-print("45 lenkkireittej‰ "+str(len(l_lista45))+" kpl")
-print("46 A->B reittej‰ "+str(len(ab_lista46))+" kpl")
-print("46 lenkkireittej‰ "+str(len(l_lista46))+" kpl")
-print("47 A->B reittej‰ "+str(len(ab_lista47))+" kpl")
-print("47 lenkkireittej‰ "+str(len(l_lista47))+" kpl")
-print("48 A->B reittej‰ "+str(len(ab_lista48))+" kpl")
-print("48 lenkkireittej‰ "+str(len(l_lista48))+" kpl")
-print("49 A->B reittej‰ "+str(len(ab_lista49))+" kpl")
-print("49 lenkkireittej‰ "+str(len(l_lista49))+" kpl")
-print("50 A->B reittej‰ "+str(len(ab_lista50))+" kpl")
-print("50 lenkkireittej‰ "+str(len(l_lista50))+" kpl")
+print("02 A->B reittej√§ "+str(len(ab_lista2))+" kpl")
+print("02 lenkkireittej√§ "+str(len(l_lista2))+" kpl")
+print("3 A->B reittej√§ "+str(len(ab_lista3))+" kpl")
+print("3 lenkkireittej√§ "+str(len(l_lista3))+" kpl")
+print("04 A->B reittej√§ "+str(len(ab_lista4))+" kpl")
+print("04 lenkkireittej√§ "+str(len(l_lista4))+" kpl")
+print("05 A->B reittej√§ "+str(len(ab_lista5))+" kpl")
+print("05 lenkkireittej√§ "+str(len(l_lista5))+" kpl")
+print("06 A->B reittej√§ "+str(len(ab_lista6))+" kpl")
+print("06 lenkkireittej√§ "+str(len(l_lista6))+" kpl")
+print("07 A->B reittej√§ "+str(len(ab_lista7))+" kpl")
+print("07 lenkkireittej√§ "+str(len(l_lista7))+" kpl")
+print("08 A->B reittej√§ "+str(len(ab_lista8))+" kpl")
+print("08 lenkkireittej√§ "+str(len(l_lista8))+" kpl")
+print("09 A->B reittej√§ "+str(len(ab_lista9))+" kpl")
+print("09 lenkkireittej√§ "+str(len(l_lista9))+" kpl")
+print("10 A->B reittej√§ "+str(len(ab_lista10))+" kpl")
+print("10 lenkkireittej√§ "+str(len(l_lista10))+" kpl")
+print("11 A->B reittej√§ "+str(len(ab_lista11))+" kpl")
+print("11 lenkkireittej√§ "+str(len(l_lista11))+" kpl")
+print("12 A->B reittej√§ "+str(len(ab_lista12))+" kpl")
+print("12 lenkkireittej√§ "+str(len(l_lista12))+" kpl")
+print("13 A->B reittej√§ "+str(len(ab_lista13))+" kpl")
+print("13 lenkkireittej√§ "+str(len(l_lista13))+" kpl")
+print("14 A->B reittej√§ "+str(len(ab_lista14))+" kpl")
+print("14 lenkkireittej√§ "+str(len(l_lista14))+" kpl")
+print("15 A->B reittej√§ "+str(len(ab_lista15))+" kpl")
+print("15 lenkkireittej√§ "+str(len(l_lista15))+" kpl")
+print("16 A->B reittej√§ "+str(len(ab_lista16))+" kpl")
+print("16 lenkkireittej√§ "+str(len(l_lista16))+" kpl")
+print("17 A->B reittej√§ "+str(len(ab_lista17))+" kpl")
+print("17 lenkkireittej√§ "+str(len(l_lista17))+" kpl")
+print("18 A->B reittej√§ "+str(len(ab_lista18))+" kpl")
+print("18 lenkkireittej√§ "+str(len(l_lista18))+" kpl")
+print("19 A->B reittej√§ "+str(len(ab_lista19))+" kpl")
+print("19 lenkkireittej√§ "+str(len(l_lista19))+" kpl")
+print("20 A->B reittej√§ "+str(len(ab_lista20))+" kpl")
+print("20 lenkkireittej√§ "+str(len(l_lista20))+" kpl")
+print("21 A->B reittej√§ "+str(len(ab_lista21))+" kpl")
+print("21 lenkkireittej√§ "+str(len(l_lista21))+" kpl")
+print("22 A->B reittej√§ "+str(len(ab_lista22))+" kpl")
+print("22 lenkkireittej√§ "+str(len(l_lista22))+" kpl")
+print("23 A->B reittej√§ "+str(len(ab_lista23))+" kpl")
+print("23 lenkkireittej√§ "+str(len(l_lista23))+" kpl")
+print("24 A->B reittej√§ "+str(len(ab_lista24))+" kpl")
+print("24 lenkkireittej√§ "+str(len(l_lista24))+" kpl")
+print("25 A->B reittej√§ "+str(len(ab_lista25))+" kpl")
+print("25 lenkkireittej√§ "+str(len(l_lista25))+" kpl")
+print("26 A->B reittej√§ "+str(len(ab_lista26))+" kpl")
+print("26 lenkkireittej√§ "+str(len(l_lista26))+" kpl")
+print("27 A->B reittej√§ "+str(len(ab_lista27))+" kpl")
+print("27 lenkkireittej√§ "+str(len(l_lista27))+" kpl")
+print("28 A->B reittej√§ "+str(len(ab_lista28))+" kpl")
+print("28 lenkkireittej√§ "+str(len(l_lista28))+" kpl")
+print("30 A->B reittej√§ "+str(len(ab_lista30))+" kpl")
+print("30 lenkkireittej√§ "+str(len(l_lista30))+" kpl")
+print("32 A->B reittej√§ "+str(len(ab_lista32))+" kpl")
+print("32 lenkkireittej√§ "+str(len(l_lista32))+" kpl")
+print("33 A->B reittej√§ "+str(len(ab_lista33))+" kpl")
+print("33 lenkkireittej√§ "+str(len(l_lista33))+" kpl")
+print("34 A->B reittej√§ "+str(len(ab_lista34))+" kpl")
+print("34 lenkkireittej√§ "+str(len(l_lista34))+" kpl")
+print("35 A->B reittej√§ "+str(len(ab_lista35))+" kpl")
+print("35 lenkkireittej√§ "+str(len(l_lista35))+" kpl")
+print("36 A->B reittej√§ "+str(len(ab_lista36))+" kpl")
+print("36 lenkkireittej√§ "+str(len(l_lista36))+" kpl")
+print("37 A->B reittej√§ "+str(len(ab_lista37))+" kpl")
+print("37 lenkkireittej√§ "+str(len(l_lista37))+" kpl")
+print("39 A->B reittej√§ "+str(len(ab_lista39))+" kpl")
+print("39 lenkkireittej√§ "+str(len(l_lista39))+" kpl")
+print("40 A->B reittej√§ "+str(len(ab_lista40))+" kpl")
+print("40 lenkkireittej√§ "+str(len(l_lista40))+" kpl")
+print("43 A->B reittej√§ "+str(len(ab_lista43))+" kpl")
+print("43 lenkkireittej√§ "+str(len(l_lista43))+" kpl")
+print("44 A->B reittej√§ "+str(len(ab_lista44))+" kpl")
+print("44 lenkkireittej√§ "+str(len(l_lista44))+" kpl")
+print("45 A->B reittej√§ "+str(len(ab_lista45))+" kpl")
+print("45 lenkkireittej√§ "+str(len(l_lista45))+" kpl")
+print("46 A->B reittej√§ "+str(len(ab_lista46))+" kpl")
+print("46 lenkkireittej√§ "+str(len(l_lista46))+" kpl")
+print("47 A->B reittej√§ "+str(len(ab_lista47))+" kpl")
+print("47 lenkkireittej√§ "+str(len(l_lista47))+" kpl")
+print("48 A->B reittej√§ "+str(len(ab_lista48))+" kpl")
+print("48 lenkkireittej√§ "+str(len(l_lista48))+" kpl")
+print("49 A->B reittej√§ "+str(len(ab_lista49))+" kpl")
+print("49 lenkkireittej√§ "+str(len(l_lista49))+" kpl")
+print("50 A->B reittej√§ "+str(len(ab_lista50))+" kpl")
+print("50 lenkkireittej√§ "+str(len(l_lista50))+" kpl")
 
 
-# M‰‰ritet‰‰n output-datasetit
+# M√§√§ritet√§√§n output-datasetit
 analyysiDS = "Analyysipisteet"
 AnalyysiPath = os.path.join(ws_dir, "GPS_pisteet.gdb", analyysiDS)
 
 validointiDS = "Validointipisteet"
 ValidPath = os.path.join(ws_dir, "GPS_pisteet.gdb", validointiDS)
 
-# Funktio listojen l‰pik‰yntiin
+# Funktio listojen l√§pik√§yntiin
 def listacheck(ABlista,Llista):
         print("Prosessoidaan " + str(ABlista[0]) + " listaa")
         # jos AB-listaa alle 100
@@ -506,18 +506,18 @@ def listacheck(ABlista,Llista):
                     arcpy.CopyFeatures_management(lenkki, os.path.join(outdir,newname_L))
 
             
-        # jos AB-listalla yli 100, tee seuraavaa ja lenkkilistalle ei tarvitse tehd‰ mit‰‰n
+        # jos AB-listalla yli 100, tee seuraavaa ja lenkkilistalle ei tarvitse tehd√§ mit√§√§n
         else:
             print("Yli 100 AB reittia")
-            # Tarkistetaan montako AB-reitti‰
+            # Tarkistetaan montako AB-reitti√§
             montako = int(len(ABlista))
-            # lasketaan montako reitti‰ yli sadan
+            # lasketaan montako reitti√§ yli sadan
             yli_sadan = montako - 100
             # jos extraa alle 120
             if yli_sadan < 100:
                 # valitaan satunnaisesti 100 + loput
                 valitaan = 100 + yli_sadan
-            # jos enemm‰n, valitaan 200
+            # jos enemm√§n, valitaan 200
             else:
                 valitaan = 200
             print("Valitaan satunnaisesti: " + str(valitaan))
@@ -526,8 +526,8 @@ def listacheck(ABlista,Llista):
             # random.sample http://stackoverflow.com/questions/15511349/select-50-items-from-list-at-random-to-write-to-file
             randomList = random.sample(ABlista,valitaan)
 
-            # Koska pisteet on valittu satunnaisessa j‰rjestyksess‰
-            # Luupataan 100 ensimm‰ist‰
+            # Koska pisteet on valittu satunnaisessa j√§rjestyksess√§
+            # Luupataan 100 ensimm√§ist√§
             for z in randomList[0:100]:
                 newname1 = "A" + os.path.basename(z)
                 analysis_point = os.path.join(AnalyysiPath,newname1)
