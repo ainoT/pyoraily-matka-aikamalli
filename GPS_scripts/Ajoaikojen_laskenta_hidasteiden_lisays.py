@@ -1,5 +1,5 @@
 # -*- coding: cp1252 -*-
-# Lasketaan tiesegmenttien ajoajat eri pyöräilijätyypeille ja hidastetuille osuuksille
+# Lasketaan tiesegmenttien ajoajat eri pyÃ¶rÃ¤ilijÃ¤tyypeille ja hidastetuille osuuksille
 
 import arcpy
 import os
@@ -8,34 +8,34 @@ from arcpy import env
 
 env.overwriteOutput = True
 
-# Haetaan pyöräverkoston tiedostopolku
+# Haetaan pyÃ¶rÃ¤verkoston tiedostopolku
 fp_reititys = "[filepath]"
 env.workspace = fp_reititys
 tieverkko = os.path.join(fp_reititys,"Pyoraily_E","pyorailyverkko_E_tm35fin")
 
-# Lisätään kentät eri pyöräilijätyyppien vakionopeuksille
-arcpy.AddField_management(tieverkko, "Nop3", "SHORT") # "peruspyöräilijä", aktiivisuus 3, nopeus 18 km/h
-arcpy.AddField_management(tieverkko, "Nop4", "SHORT") # "rivakka arkipyöräilijä", aktiivisuus 4, nopeus 22 km/h
-arcpy.AddField_management(tieverkko, "Nop5", "SHORT") # "aktiivipyöräiljä", aktiivisuus 5, nopeus 24 km/h
+# LisÃ¤tÃ¤Ã¤n kentÃ¤t eri pyÃ¶rÃ¤ilijÃ¤tyyppien vakionopeuksille
+arcpy.AddField_management(tieverkko, "Nop3", "SHORT") # "peruspyÃ¶rÃ¤ilijÃ¤", aktiivisuus 3, nopeus 18 km/h
+arcpy.AddField_management(tieverkko, "Nop4", "SHORT") # "rivakka arkipyÃ¶rÃ¤ilijÃ¤", aktiivisuus 4, nopeus 22 km/h
+arcpy.AddField_management(tieverkko, "Nop5", "SHORT") # "aktiivipyÃ¶rÃ¤iljÃ¤", aktiivisuus 5, nopeus 24 km/h
 
-# Lisätään kentät keskustan hidastettaville nopeuksille
-arcpy.AddField_management(tieverkko, "Nop3hidaste", "DOUBLE") # "peruspyöräilijä", aktiivisuus 3, nopeus hidastettavissa ruuiduissa 0,8*18 km/h
-arcpy.AddField_management(tieverkko, "Nop4hidaste", "DOUBLE") # "rivakka arkipyöräilijä", aktiivisuus 4, nopeus hidastettavissa ruuiduissa 0,8*22 km/h
-arcpy.AddField_management(tieverkko, "Nop5hidaste", "DOUBLE") # "aktiivipyöräiljä", aktiivisuus 5, nopeus hidastettavissa ruuiduissa 0,8*24 km/h
+# LisÃ¤tÃ¤Ã¤n kentÃ¤t keskustan hidastettaville nopeuksille
+arcpy.AddField_management(tieverkko, "Nop3hidaste", "DOUBLE") # "peruspyÃ¶rÃ¤ilijÃ¤", aktiivisuus 3, nopeus hidastettavissa ruuiduissa 0,8*18 km/h
+arcpy.AddField_management(tieverkko, "Nop4hidaste", "DOUBLE") # "rivakka arkipyÃ¶rÃ¤ilijÃ¤", aktiivisuus 4, nopeus hidastettavissa ruuiduissa 0,8*22 km/h
+arcpy.AddField_management(tieverkko, "Nop5hidaste", "DOUBLE") # "aktiivipyÃ¶rÃ¤iljÃ¤", aktiivisuus 5, nopeus hidastettavissa ruuiduissa 0,8*24 km/h
 
 # Lasketaan nopeudet
 arcpy.CalculateField_management(tieverkko, "Nop3", 18, "PYTHON") 
 arcpy.CalculateField_management(tieverkko, "Nop4", 22, "PYTHON")
 arcpy.CalculateField_management(tieverkko, "Nop5", 24, "PYTHON")
 
-## Valitaan ne segmentit joihin hidaste lisätään
+## Valitaan ne segmentit joihin hidaste lisÃ¤tÃ¤Ã¤n
 keskustaruudut = "[fp]"
-# Tehdään feature layer
+# TehdÃ¤Ã¤n feature layer
 keskusta_lyr = "Keskusta_lyr"
 arcpy.MakeFeatureLayer_management(keskustaruudut, keskusta_lyr)
 # Valitaan ruuduista ne, joiden nopeus on keskinopeutta 6.3 m/s hitaampi
 arcpy.SelectLayerByAttribute_management(keskusta_lyr, "NEW_SELECTION", 'Keskinopeus < 6.3')
-# Valitaan tiesegmenteistä ne jotka ovat kyseisten ruutujen sisällä
+# Valitaan tiesegmenteistÃ¤ ne jotka ovat kyseisten ruutujen sisÃ¤llÃ¤
 tieverkko_lyr = "Tieverkko_lyr"
 arcpy.MakeFeatureLayer_management(tieverkko, tieverkko_lyr)
 arcpy.SelectLayerByLocation_management(tieverkko_lyr, "HAVE_THEIR_CENTER_IN", keskusta_lyr)
@@ -43,7 +43,7 @@ arcpy.SelectLayerByLocation_management(tieverkko_lyr, "HAVE_THEIR_CENTER_IN", ke
 arcpy.CalculateField_management(tieverkko_lyr, "Nop3hidaste", '0.8*18', "PYTHON")
 arcpy.CalculateField_management(tieverkko_lyr, "Nop4hidaste", '0.8*22', "PYTHON")
 arcpy.CalculateField_management(tieverkko_lyr, "Nop5hidaste", '0.8*24', "PYTHON")
-# Käännetään valinta
+# KÃ¤Ã¤nnetÃ¤Ã¤n valinta
 arcpy.SelectLayerByLocation_management(tieverkko_lyr, "WITHIN", keskusta_lyr, "", "SWITCH_SELECTION")
 # Lasketaan nopeus "normaaleille" segmenteille
 arcpy.CalculateField_management(tieverkko_lyr, "Nop3hidaste", 18, "PYTHON")
@@ -52,7 +52,7 @@ arcpy.CalculateField_management(tieverkko_lyr, "Nop5hidaste", 24, "PYTHON")
 # Poistetaan valinnat
 arcpy.SelectLayerByAttribute_management(tieverkko_lyr, "CLEAR_SELECTION")
 
-# Lisätään kentät ajoajoille
+# LisÃ¤tÃ¤Ã¤n kentÃ¤t ajoajoille
 arcpy.AddField_management(tieverkko, "Aika3", "DOUBLE") 
 arcpy.AddField_management(tieverkko, "Aika4", "DOUBLE") 
 arcpy.AddField_management(tieverkko, "Aika5", "DOUBLE")
