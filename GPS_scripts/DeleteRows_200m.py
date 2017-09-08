@@ -15,7 +15,7 @@ for track in fcList:
     rows = [row[0] for row in arcpy.da.SearchCursor(track, "from_start")]
     # haetaan viimeinen arvo listasta ja muutetaan float-tyypiksi
     last_row = float(rows[-1]) 
-    # Tehd‰‰n UpdateCursor rivien poistamiseksi
+    # Tehd√§√§n UpdateCursor rivien poistamiseksi
     with arcpy.da.UpdateCursor(track,["from_start"]) as cursor:
             for row in cursor:
                 if row[0]<=200:             # jos arvo <= 200m, poistetaan
